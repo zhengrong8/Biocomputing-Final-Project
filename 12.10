@@ -20,26 +20,29 @@ for (txt_file in txt_files) {
 allData <- read.csv("allData.csv", header= TRUE, sep=",")
  #to determine the infectious status of every patients
   #add a new column to store the data
- library(dplyr)
- library(ggplot2)
- allData<- mutate(allData, InfectiousStatus = "NotInfected")
- #determine infected patients
- allData$InfectionStatus<-"NotInfected"
- for (i in 1:nrow(allData)){
-   if (any(allData[i,3:12]==1)){
-     allData$InfectionStatus[i]<-"Infected"
-   }
- }
- 
- 
- #Infectious count
- dailyInfectionsByCountry <- allData %>%
-   group_by(country, dayofYear) %>%
-   summarize(
-     InfectedCount = sum(InfectionStatus == "Infected"),
-     .groups = "drop",
-     TotalTests=n(),
-     )
+ # analyze a data frame
+df_analyze <- function(df) {
+  num_screens = nrow(df)
+  num_infection <- 0
+  num_male_infec <- 0
+  num_fem_infec <- 0
+  for (i in 1:nrow(df)){
+    if (any(df[i,3:12] == 1)) {
+      num_infection <- num_infection + 1
+      if (df$gender[i] =="male"){
+        num_male_infec <- num_male_infec + 1 
+      } else {
+        num_fem_infec <- num_fem_infec + 1
+      }
+    }
+  }
+  cat("num_screens = ", num_screens, "\n")
+  cat("num_infection = ", num_infection, "\n")
+  cat("num_male_infec = ", num_male_infec, "\n")
+  cat("num_fem_infec = ", num_fem_infec, "\n")
+}
+data = read.csv("screen_120.csv",header=TRUE)
+df_analyze(data)
  #plot
  # 1. infected count of every day in two countries
  InfectedCount_plot<-ggplot(dailyInfectionsByCountry,aes(x=dayofYear,y=InfectedCount,color = country, linetype = country))+
@@ -50,3 +53,5 @@ allData <- read.csv("allData.csv", header= TRUE, sep=",")
  PercentageofInfection_plot<-ggplot(dailyInfectionsByCountry,aes(x=dayofYear,y=InfectionRate,fill=country))+
    geom_bar(stat="identity",position="dodge",color="black",size=0.5)+
    labs(title="Percentage of patients that are infected")
+
+
