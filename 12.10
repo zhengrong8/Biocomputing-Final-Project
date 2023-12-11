@@ -1,0 +1,52 @@
+setwd("D:/PhD/lecture/intro Biocomputing/Biocomputing-Final-Project-main")
+
+#convert data
+ # file list
+txt_files <- list.files("D:/PhD/lecture/intro Biocomputing/Biocomputing-Final-Project-main/countryY", 
+                        pattern = "\\.txt$", full.names = TRUE)
+# for loop
+for (txt_file in txt_files) {
+  # 生成对应的csv文件路径
+  csv_file <- sub("\\.txt$", ".csv", txt_file)
+  # read
+  data <- read.delim(txt_file, header = TRUE, sep=" ")
+  # write
+  write.csv(data, file = csv_file, row.names = FALSE)}
+
+#compile
+
+#summarize the compiled data
+ #read in the file
+allData <- read.csv("allData.csv", header= TRUE, sep=",")
+ #to determine the infectious status of every patients
+  #add a new column to store the data
+ library(dplyr)
+ library(ggplot2)
+ allData<- mutate(allData, InfectiousStatus = "NotInfected")
+ #determine infected patients
+ allData$InfectionStatus<-"NotInfected"
+ for (i in 1:nrow(allData)){
+   if (any(allData[i,3:12]==1)){
+     allData$InfectionStatus[i]<-"Infected"
+   }
+ }
+ 
+ 
+ #Infectious count
+ dailyInfectionsByCountry <- allData %>%
+   group_by(country, dayofYear) %>%
+   summarize(
+     InfectedCount = sum(InfectionStatus == "Infected"),
+     .groups = "drop",
+     TotalTests=n(),
+     )
+ #plot
+ # 1. infected count of every day in two countries
+ InfectedCount_plot<-ggplot(dailyInfectionsByCountry,aes(x=dayofYear,y=InfectedCount,color = country, linetype = country))+
+          geom_line(stat="identity")+
+          labs(title="Infected patients each day")
+ # 2. percentage of patients that are screened are infected
+ dailyInfectionsByCountry$InfectionRate<- dailyInfectionsByCountry$InfectedCount / dailyInfectionsByCountry$TotalTests *100
+ PercentageofInfection_plot<-ggplot(dailyInfectionsByCountry,aes(x=dayofYear,y=InfectionRate,fill=country))+
+   geom_bar(stat="identity",position="dodge",color="black",size=0.5)+
+   labs(title="Percentage of patients that are infected")
